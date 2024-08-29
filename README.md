@@ -2,4 +2,4 @@
 ## Brett Mitchell
 #### Repo: 5143 Operating Systems
 #### Email: brtm23@gmail.com
-#### Image and Slack/Github Profile Photo: ![OS-Pic-2](https://github.com/user-attachments/assets/35580287-50de-4fdf-8664-19e1b71d9662)
+#### Image and Slack/Github Profile Photo/Avatar: ![OS-Pic-2](https://github.com/user-attachments/assets/35580287-50de-4fdf-8664-19e1b71d9662)
