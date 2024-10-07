@@ -2,4 +2,4 @@
 
 |  #  | Folder Link | Assignment Description |
 | :-: | ----------- | ---------------------- |
-| P01 | file System | Implementation of a basic file system |
+| P01 | File System | Implementation of a basic file system |
