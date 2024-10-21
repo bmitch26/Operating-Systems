@@ -238,28 +238,55 @@ class SqliteCRUD:
         else:
             return None  # Return None if directory not found  
     
+    # def list_directory(self, pid, name=None):
+    #     """List files and directories in the current directory, optionally filtering by name."""
+    #     conn = self._connect()
+    #     cursor = conn.cursor()
+
+    #     # If a specific name is provided, filter by that name
+    #     if name:
+    #         cursor.execute("""
+    #             SELECT name, 'dir' as type, NULL as size FROM directories WHERE pid = ? AND name = ?
+    #             UNION ALL
+    #             SELECT name, 'file' as type, size FROM files WHERE pid = ? AND name = ?;
+    #         """, (pid, name, pid, name))
+    #     else:
+    #         cursor.execute(""" 
+    #             SELECT name, 'dir' as type, NULL as size FROM directories WHERE pid = ?
+    #             UNION ALL
+    #             SELECT name, 'file' as type, size FROM files WHERE pid = ?;
+    #         """, (pid, pid))
+
+    #     results = cursor.fetchall()
+    #     conn.close()
+    #     return results
+    
     def list_directory(self, pid, name=None):
         """List files and directories in the current directory, optionally filtering by name."""
         conn = self._connect()
         cursor = conn.cursor()
 
-        # If a specific name is provided, filter by that name
         if name:
             cursor.execute("""
-                SELECT name, 'dir' as type, NULL as size FROM directories WHERE pid = ? AND name = ?
+                SELECT name, 'dir' as type, NULL as size, modified_at, oid, read_permission, write_permission, execute_permission, world_read, world_write, world_execute
+                FROM directories WHERE pid = ? AND name = ?
                 UNION ALL
-                SELECT name, 'file' as type, size FROM files WHERE pid = ? AND name = ?;
+                SELECT name, 'file' as type, size, modified_date, oid, read_permission, write_permission, execute_permission, world_read, world_write, world_execute
+                FROM files WHERE pid = ? AND name = ?;
             """, (pid, name, pid, name))
         else:
-            cursor.execute(""" 
-                SELECT name, 'dir' as type, NULL as size FROM directories WHERE pid = ?
+            cursor.execute("""
+                SELECT name, 'dir' as type, NULL as size, modified_at, oid, read_permission, write_permission, execute_permission, world_read, world_write, world_execute
+                FROM directories WHERE pid = ?
                 UNION ALL
-                SELECT name, 'file' as type, size FROM files WHERE pid = ?;
+                SELECT name, 'file' as type, size, modified_date, oid, read_permission, write_permission, execute_permission, world_read, world_write, world_execute
+                FROM files WHERE pid = ?;
             """, (pid, pid))
 
         results = cursor.fetchall()
         conn.close()
         return results
+
 
     ### cd
 
@@ -362,6 +389,115 @@ class SqliteCRUD:
 
         finally:
             conn.close()
+            
+    # grep        
+    # def search_in_file(self, pattern, file_name, pid):
+    #     """Search for a pattern in the specified file."""
+    #     conn = self._connect()
+    #     cursor = conn.cursor()
+
+    #     try:
+    #         # Fetch the file contents
+    #         cursor.execute("SELECT contents FROM files WHERE name = ? AND pid = ?", (file_name, pid))
+    #         result = cursor.fetchone()
+
+    #         if result:
+    #             file_contents = result[0].decode('utf-8')  # Decode the BLOB contents
+    #             # Split the file contents into lines and search for the pattern
+    #             lines = file_contents.splitlines()
+    #             matching_lines = [line for line in lines if pattern in line]
+    #             return matching_lines
+    #         else:
+    #             return None  # File not found
+
+    #     except sqlite3.Error as e:
+    #         print(f"Database error: {e}")
+    #         return None
+
+    #     finally:
+    #         conn.close()
+    
+    def grep_file(self, pattern: str, file_name: str, l: bool = False):
+        """Search for a pattern in the file's contents."""
+        try:
+            conn = self._connect()
+            cursor = conn.cursor()
+
+            # Fetch the file contents
+            cursor.execute("SELECT contents FROM files WHERE name = ?", (file_name,))
+            result = cursor.fetchone()
+            
+            if result:
+                # Debug: Print the file contents
+                contents = result[0].decode('utf-8')
+                print(f"File contents for {file_name}: {contents}")
+                
+                # Grep for the pattern
+                lines = contents.splitlines()
+                matched_lines = [line for line in lines if pattern in line]
+                
+                # Debug: Show lines that match the pattern
+                print(f"Matched lines for pattern '{pattern}': {matched_lines}")
+                
+                if l:
+                    # Return just the file name if -l flag is set
+                    return [file_name] if matched_lines else []
+                else:
+                    return matched_lines
+            else:
+                print(f"Error: File {file_name} not found")
+                return []
+        except Exception as e:
+            print(f"Error in grep_file: {e}")
+            raise e
+        finally:
+            conn.close()
+
+
+    # Helper function to remove a file
+    def remove_file(self, target):
+        """Remove the specified file."""
+        conn = self._connect()
+        cursor = conn.cursor()
+
+        # SQL query to delete the file from the database
+        cursor.execute("DELETE FROM files WHERE name = ?", (target,))
+        conn.commit()
+        conn.close()
+        print(f"File {target} has been removed from the database.")  # Debugging
+
+    # Helper function to remove a directory
+    def remove_directory(self, target, recursive=False):
+        """Remove the specified directory (and its contents if recursive)."""
+        conn = self._connect()
+        cursor = conn.cursor()
+
+        if recursive:
+            # SQL query to remove directory and its contents recursively
+            cursor.execute("DELETE FROM directories WHERE name = ?", (target,))
+            cursor.execute("DELETE FROM files WHERE pid IN (SELECT id FROM directories WHERE name = ?)", (target,))
+            print(f"Directory {target} and its contents have been removed.")  # Debugging
+        else:
+            # SQL query to remove just the directory
+            cursor.execute("DELETE FROM directories WHERE name = ?", (target,))
+            print(f"Directory {target} has been removed.")  # Debugging
+
+        conn.commit()
+        conn.close()
+
+    # Helper function to get target info (file or directory)
+    def get_target_info(self, target):
+        """Retrieve file or directory information."""
+        conn = self._connect()
+        cursor = conn.cursor()
+
+        # Check if it's a file or directory
+        cursor.execute("SELECT name, 'file' as type FROM files WHERE name = ? UNION SELECT name, 'dir' as type FROM directories WHERE name = ?", (target, target))
+        result = cursor.fetchone()
+        conn.close()
+
+        return {"name": result[0], "type": result[1]} if result else None
+
 
 
     def create_file(self, name, contents, pid, oid, size=0):
