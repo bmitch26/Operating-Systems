@@ -1,53 +1,38 @@
 # api.py
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from sqliteCRUD import SqliteCRUD
 import uvicorn
 import logging
 
-app = FastAPI()
+description = """🚀
+## File System Api
+"""
+
+app = FastAPI(    title="File System",
+    description=description,
+    version="0.0.1",
+    terms_of_service="https://profgriffin.com/terms/",
+    contact={
+        "name": "FileSystemAPI",
+        "url": "https://profgriffin.com/contact/",
+        "email": "chacha@profgriffin.com",
+    },
+    license_info={
+        "name": "Apache 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+)
 db = SqliteCRUD()
 
+# Documentation page when visiting root
+@app.get("/")
+async def docs_redirect():
+    """Api's base route that displays the information created above in the ApiInfo section."""
+    return RedirectResponse(url="/docs")
+
 ### 1. List Directory
-
-# @app.get("/ls/{pid}")
-# def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, name: str = None):
-#     """List the contents of a directory with optional flags."""
-#     try:
-#         logging.debug(f"Received request to list directory with pid={pid}, name={name}, flags l={l}, a={a}, h={h}")
-        
-#         contents = db.list_directory(pid)
-        
-#         # Build the response data based on flags
-#         response_data = []
-#         for item in contents:
-#             name, file_type = item[0], item[1]
-#             size = item[2] if len(item) > 2 else None  # Ensure size exists
-#             modified_time = item[3] if len(item) > 3 else None  # Ensure modified time exists
-            
-#             if l:
-#                 # Format long listing details
-#                 size_str = f"{size} bytes" if size else "N/A"
-#                 modified_time_str = modified_time if modified_time else "N/A"
-#                 response_data.append({
-#                     'name': name,
-#                     'type': file_type,
-#                     'size': size_str,
-#                     'modified_date': modified_time_str
-#                 })
-#             else:
-#                 # Handle hidden files if '-a' flag is set
-#                 if not a and name.startswith('.'):
-#                     continue
-#                 response_data.append({'name': name, 'type': file_type})
-                
-#         logging.debug(f"Returning directory contents: {response_data}")
-#         return {"contents": response_data}
-    
-#     except Exception as e:
-#         logging.error(f"Error occurred: {str(e)}")
-#         raise HTTPException(status_code=400, detail=str(e))
-
 
 def human_readable_size(size_in_bytes):
     """Convert a file size in bytes to a human-readable format."""
@@ -58,93 +43,6 @@ def human_readable_size(size_in_bytes):
             return f"{size_in_bytes:.1f} {unit}"
         size_in_bytes /= 1024.0
     return f"{size_in_bytes:.1f} PB"
-
-
-# @app.get("/ls/{pid}")
-# def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, name: str = None):
-#     """List the contents of a directory with optional flags."""
-#     try:
-#         logging.debug(f"Received request to list directory with pid={pid}, name={name}, flags l={l}, a={a}, h={h}")
-        
-#         contents = db.list_directory(pid)
-        
-#         # Build the response data based on flags
-#         response_data = []
-#         for item in contents:
-#             name, file_type = item[0], item[1]
-#             size = item[2] if len(item) > 2 else None  # Ensure size exists
-#             modified_time = item[3] if len(item) > 3 else None  # Ensure modified time exists
-            
-#             if l:
-#                 # Handle human-readable size if '-h' flag is passed
-#                 if h and size:
-#                     size_str = human_readable_size(size)
-#                 else:
-#                     size_str = f"{size} bytes" if size else "N/A"
-                
-#                 modified_time_str = modified_time if modified_time else "N/A"
-#                 response_data.append({
-#                     'name': name,
-#                     'type': file_type,
-#                     'size': size_str,
-#                     'modified_date': modified_time_str
-#                 })
-#             else:
-#                 # Handle hidden files if '-a' flag is set
-#                 if not a and name.startswith('.'):
-#                     continue
-#                 response_data.append({'name': name, 'type': file_type})
-        
-#         logging.debug(f"Returning directory contents: {response_data}")
-#         return {"contents": response_data}
-    
-#     except Exception as e:
-#         logging.error(f"Error occurred: {str(e)}")
-#         raise HTTPException(status_code=400, detail=str(e))
-
-
-# @app.get("/ls/{pid}")
-# def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, name: str = None):
-#     """List the contents of a directory with optional flags."""
-#     try:
-#         logging.debug(f"Received request to list directory with pid={pid}, name={name}, flags l={l}, a={a}, h={h}")
-        
-#         contents = db.list_directory(pid)
-        
-#         # Build the response data based on flags
-#         response_data = []
-#         for item in contents:
-#             name, file_type = item[0], item[1]
-#             size = item[2] if len(item) > 2 else None  # Ensure size exists
-#             modified_time = item[3] if len(item) > 3 else None  # Ensure modified time exists
-            
-#             if l:
-#                 # Handle human-readable size if '-h' flag is passed
-#                 if h and file_type == 'file' and size:  # Only apply to files, not directories
-#                     size_str = human_readable_size(size)
-#                 else:
-#                     size_str = f"{size} bytes" if size else "N/A"
-                
-#                 modified_time_str = modified_time if modified_time else "N/A"
-#                 response_data.append({
-#                     'name': name,
-#                     'type': file_type,
-#                     'size': size_str,
-#                     'modified_date': modified_time_str
-#                 })
-#             else:
-#                 # Handle hidden files if '-a' flag is set
-#                 if not a and name.startswith('.'):
-#                     continue
-#                 response_data.append({'name': name, 'type': file_type})
-        
-#         logging.debug(f"Returning directory contents: {response_data}")
-#         return {"contents": response_data}
-    
-#     except Exception as e:
-#         logging.error(f"Error occurred: {str(e)}")
-#         raise HTTPException(status_code=400, detail=str(e))
-
 
 def format_permissions(read_perm, write_perm, execute_perm):
     """Format the permissions for display."""
@@ -167,57 +65,6 @@ def human_readable_size(size_in_bytes):
     return f"{size_in_bytes:.1f} PB"
 
 
-# @app.get("/ls/{pid}")
-# def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, name: str = None):
-#     """List the contents of a directory with optional flags."""
-#     try:
-#         logging.debug(f"Received request to list directory with pid={pid}, name={name}, flags l={l}, a={a}, h={h}")
-        
-#         contents = db.list_directory(pid, name)
-        
-#         # Build the response data based on flags
-#         response_data = []
-#         for item in contents:
-#             name, file_type = item[0], item[1]
-#             size = item[2] if len(item) > 2 else None  # Ensure size exists
-#             modified_time = item[3] if len(item) > 3 else None  # Ensure modified time exists
-#             owner = item[4] if len(item) > 4 else "N/A"  # Owner ID
-#             read_perm = item[5] if len(item) > 5 else 0
-#             write_perm = item[6] if len(item) > 6 else 0
-#             execute_perm = item[7] if len(item) > 7 else 0
-            
-#             # Handle the '-l' flag for long format output
-#             if l:
-#                 # Handle human-readable size if '-h' flag is passed
-#                 if h and file_type == 'file' and size:  # Only apply to files, not directories
-#                     size_str = human_readable_size(size)
-#                 else:
-#                     size_str = f"{size} bytes" if size else "N/A"
-                
-#                 modified_time_str = modified_time if modified_time else "N/A"
-#                 permissions = format_permissions(read_perm, write_perm, execute_perm)  # Call permission formatter
-#                 response_data.append({
-#                     'name': name,
-#                     'type': file_type,
-#                     'size': size_str,
-#                     'modified_date': modified_time_str,
-#                     'owner': owner,
-#                     'permissions': permissions
-#                 })
-#             else:
-#                 # Handle hidden files if '-a' flag is set
-#                 if not a and name.startswith('.'):
-#                     continue
-#                 response_data.append({'name': name, 'type': file_type})
-        
-#         logging.debug(f"Returning directory contents: {response_data}")
-#         return {"contents": response_data}
-    
-#     except Exception as e:
-#         logging.error(f"Error occurred: {str(e)}")
-#         raise HTTPException(status_code=400, detail=str(e))
-
-
 def _format_permissions(item):
     """Format the permissions for the long listing (owner and world permissions only)."""
     # Owner permissions
@@ -236,69 +83,92 @@ def _format_permissions(item):
     # Return the combined permission string (e.g., 'rwxr-x')
     return permissions
 
+
+
 @app.get("/ls/{pid}")
 def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, name: str = None):
-    """List the contents of a directory with optional flags."""
+    """List the contents of a directory with optional flags, handling both files and directories."""
     try:
         logging.debug(f"Received request to list directory with pid={pid}, name={name}, flags l={l}, a={a}, h={h}")
         
+        # Fetch the directory and file contents
         contents = db.list_directory(pid, name)
-        
+        logging.debug(f"Directory and file contents: {contents}")  # Debugging
+
         # Build the response data based on flags
         response_data = []
         for item in contents:
             name, file_type = item[0], item[1]
-            size = item[2] if len(item) > 2 else None  # Ensure size exists
-            modified_time = item[3] if len(item) > 3 else None  # Ensure modified time exists
-            owner = item[4] if len(item) > 4 else "N/A"  # Owner ID
-            read_perm = item[5] if len(item) > 5 else 0
-            write_perm = item[6] if len(item) > 6 else 0
-            execute_perm = item[7] if len(item) > 7 else 0
-            world_read = item[8] if len(item) > 8 else 0
-            world_write = item[9] if len(item) > 9 else 0
-            world_execute = item[10] if len(item) > 10 else 0
 
-            # Handle the '-l' flag for long format output
-            if l:
-                # Handle human-readable size if '-h' flag is passed
-                if h and file_type == 'file' and size:  # Only apply to files, not directories
-                    size_str = human_readable_size(size)
-                else:
-                    size_str = f"{size} bytes" if size else "N/A"
-                
-                modified_time_str = modified_time if modified_time else "N/A"
+            if file_type == 'dir':
+                # For directories
+                modified_at = item[2] if len(item) > 2 else "N/A"  # Use 'modified_at' for directories
+                owner = item[3] if len(item) > 3 else "N/A"  # Use 'oid' as owner
+                read_perm = item[4] if len(item) > 4 else 0
+                write_perm = item[5] if len(item) > 5 else 0
+                execute_perm = item[6] if len(item) > 6 else 0
+                world_read = item[7] if len(item) > 7 else 0
+                world_write = item[8] if len(item) > 8 else 0
+                world_execute = item[9] if len(item) > 9 else 0
+
+                # Format the permissions
                 permissions = _format_permissions({
-                    'read_permission': read_perm, 
-                    'write_permission': write_perm, 
+                    'read_permission': read_perm,
+                    'write_permission': write_perm,
                     'execute_permission': execute_perm,
                     'world_read': world_read,
                     'world_write': world_write,
-                    'world_execute': world_execute
+                    'world_execute': world_execute,
                 })
-                
+
+                # Append the formatted directory information to the response
                 response_data.append({
                     'name': name,
-                    'type': file_type,
-                    'size': size_str,
-                    'modified_date': modified_time_str,
-                    'owner': owner,
-                    'permissions': permissions
+                    'type': 'dir',
+                    'modified_at': modified_at,
+                    'owner': owner,  # Use 'oid' as the owner
+                    'permissions': permissions,
+                    'size': 'N/A'  # Directories don't have sizes
                 })
-            else:
-                # Handle hidden files if '-a' flag is set
-                if not a and name.startswith('.'):
-                    continue
-                response_data.append({'name': name, 'type': file_type})
-        
-        logging.debug(f"Returning directory contents: {response_data}")
+
+            elif file_type == 'file':
+                # For files
+                modified_date = item[2] if len(item) > 2 else "N/A"  # Use 'modified_date' for files
+                owner = item[3] if len(item) > 3 else "N/A"  # Use 'oid' as owner
+                read_perm = item[4] if len(item) > 4 else 0
+                write_perm = item[5] if len(item) > 5 else 0
+                execute_perm = item[6] if len(item) > 6 else 0
+                world_read = item[7] if len(item) > 7 else 0
+                world_write = item[8] if len(item) > 8 else 0
+                world_execute = item[9] if len(item) > 9 else 0
+                size = item[10] if len(item) > 10 else "N/A"  # Size is relevant for files
+
+                # Format the permissions
+                permissions = _format_permissions({
+                    'read_permission': read_perm,
+                    'write_permission': write_perm,
+                    'execute_permission': execute_perm,
+                    'world_read': world_read,
+                    'world_write': world_write,
+                    'world_execute': world_execute,
+                })
+
+                # Append the formatted file information to the response
+                response_data.append({
+                    'name': name,
+                    'type': 'file',
+                    'modified_date': modified_date,
+                    'owner': owner,  # Use 'oid' as the owner
+                    'permissions': permissions,
+                    'size': size  # For files, size is relevant
+                })
+
+        logging.debug(f"Returning directory and file contents: {response_data}")
         return {"contents": response_data}
-    
+
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-
-
-
 
 
 
@@ -307,34 +177,15 @@ def list_directory(pid: int, l: bool = False, a: bool = False, h: bool = False, 
 @app.post("/mkdir/")
 def create_directory(name: str, pid: int, oid: int):
     """Create a new directory."""
+    print(f"{name}, {pid}, {oid}")
     try:
-        dir_id = db.create_directory(name, pid, oid)
+        # response = db.create_directory(name, pid, oid) # change here, use griff return package
+        dir_id = db.create_directory(name, pid, oid) # change here, use griff return package
         return {"directory_id": dir_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 ### 3. Change Directory
-
-# @app.get("/cd/")
-# def change_directory(dir: str, current_pid: int):
-#     """Change directory and return the new pid."""
-#     try:
-#         if dir == "~":
-#             # Go to home directory
-#             new_pid = db.get_home_directory_pid()
-#         elif dir == "..":
-#             # Go to parent directory
-#             new_pid = db.get_parent_directory_pid(current_pid)
-#         else:
-#             # Go to the specified directory
-#             new_pid = db.get_directory_pid_by_name(dir, current_pid)
-        
-#         if new_pid:
-#             return {"new_pid": new_pid}
-#         else:
-#             raise HTTPException(status_code=404, detail="Directory not found")
-#     except Exception as e:
-#         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/cd/")
 def change_directory(dir: str, current_pid: int):
@@ -419,6 +270,7 @@ def wc_w(file_name: str, pid: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 #### Real 7. grep and grep -l
+
 @app.get("/grep/")
 def grep_file(pattern: str, file_name: str, l: bool = False):
     """Search for the pattern in the given file."""
@@ -473,7 +325,6 @@ def remove_item(target: str, recursive: bool = False, force: bool = False):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 ### 4. Create new file
 
 @app.post("/create_file/")
@@ -488,13 +339,14 @@ def create_file(name: str, contents: str, pid: int, oid: int, size: int):
 ### 5. Move File
 
 @app.post("/mv/")
-def move_file(file_name: str, src_pid: int, dest_pid: int):
-    """Move a file."""
+def move_file(file_name: str, src_pid: int, dest_pid: int, dest_name: str):
+    """Move or rename a file."""
     try:
-        db.move_file(file_name, src_pid, dest_pid)
-        return {"detail": f"Moved {file_name} to new directory"}
+        db.move_file(file_name, src_pid, dest_pid, dest_name)
+        return {"detail": f"Moved {file_name} to new location as {dest_name}"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 ### 6. Delete a file
 
@@ -510,14 +362,64 @@ def delete_file(file_name: str, pid: int):
 
 ### 8. Change file permissions
 
-@app.post("/chmod/")
-def chmod(file_name: str, pid: int, permissions: dict):
-    """Change the permissions of a file."""
+@app.get("/is_dir_or_file/")
+def is_dir_or_file(file_name: str, pid: int):
+    """Check if the target is a file or directory."""
     try:
-        db.chmod(file_name, pid, permissions)
+        # Query the database to check if the target is a file or directory
+        target_type = db.check_if_dir_or_file(file_name, pid)
+        return {"type": target_type}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@app.post("/chmod/")
+def chmod(file_name: str, pid: int, target: str, permissions: dict):
+    """Change the permissions of a file or directory."""
+    try:
+        if target == "directory":
+            db.chmod_directory(file_name, pid, permissions)
+        elif target == "file":
+            db.chmod_file(file_name, pid, permissions)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid target type.")
         return {"detail": f"Permissions updated for {file_name}"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+    
+### 9. Copy files
+
+
+def copy_directory_contents(src_pid, dest_pid):
+    """Recursively copy all contents of a directory."""
+    files = db.list_directory(src_pid)
+
+@app.post("/cp/")
+def copy_file_or_directory(file_name: str, src_pid: int, dest_pid: int, dest_name: str):
+    """Copy a file or directory."""
+    try:
+        dir_id = db.get_directory_pid_by_name(file_name, src_pid)
+        if dir_id:
+            # Copy all file contents to the directory
+            copy_directory_contents(dir_id, dest_pid)
+            return {"detail": f"Copied directory {file_name} to {dest_name}"}
+        else:
+            db.copy_file(file_name, src_pid, dest_pid, dest_name)
+            return {"detail": f"Copied file {file_name} to {dest_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+### 10. Read current directory
+
+@app.get("/pwd/")
+def get_current_directory():
+    """Return the current directory path."""
+    # This is a placeholder as the API doesn't maintain state
+    return {"current_directory": "Placeholder for pwd. Do not use unless necessary."}
 
 ### Close database connections
 
