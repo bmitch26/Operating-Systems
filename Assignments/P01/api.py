@@ -1,4 +1,11 @@
 # api.py
+"""
+The API in this project serves as an intermediary between the shell commands and 
+the SQLite database, allowing the shell to interact with the database by processing
+commands such as listing directories, managing files, and handling permissions. 
+It receives requests from the shell, performs the necessary CRUD operations using 
+sqliteCRUD, and returns the appropriate responses based on the database state.
+"""
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -268,6 +275,21 @@ def wc_w(file_name: str, pid: int):
             raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+#### wc
+@app.get("/wc/")
+def wc(file_name: str, pid: int):
+    """API endpoint to count lines, words, and characters in a file."""
+    try:
+        # Use sqliteCRUD to fetch the counts
+        line_count, word_count, char_count = db.count_lines_words_chars(file_name, pid)
+        if line_count is not None:
+            return {"line_count": line_count, "word_count": word_count, "char_count": char_count}
+        else:
+            raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 #### Real 7. grep and grep -l
 

@@ -65,6 +65,23 @@ def parse(cmd):
         "append": append
     }
 
+def human_readable_size(size_in_bytes):
+    """Convert bytes to a human-readable format (e.g., KB, MB, GB)."""
+    if size_in_bytes is None:
+        return "N/A"
+    
+    # Ensure size_in_bytes is a float for comparison
+    try:
+        size_in_bytes = float(size_in_bytes)
+    except ValueError:
+        return "N/A"  # Return "N/A" if size_in_bytes is not a valid number
+    
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_in_bytes < 1024.0:
+            return f"{size_in_bytes:.1f} {unit}"
+        size_in_bytes /= 1024.0
+    return f"{size_in_bytes:.1f} PB"
+
 
 
 class DbApi:
@@ -144,17 +161,6 @@ class DbApi:
         # Return the combined permission string (e.g., 'rwxr-x')
         return permissions
 
-
-
-    def human_readable_size(self, size_in_bytes):
-        """Convert a file size in bytes to a human-readable format."""
-        if size_in_bytes is None:
-            return "N/A"
-        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-            if size_in_bytes < 1024.0:
-                return f"{size_in_bytes:.1f} {unit}"
-            size_in_bytes /= 1024.0
-        return f"{size_in_bytes:.1f} PB"
 
 
     def run_ls(self, cmd, previous_output=None, redirect=None, append=False):
@@ -278,7 +284,19 @@ class DbApi:
             self._print_ls_output(contents, flags)
             return contents_str  # Return contents for further piping if needed
 
+    # def human_readable_size(self, size_in_bytes):
+    #     """Convert a file size in bytes to a human-readable format."""
+    #     if size_in_bytes is None:
+    #         return "N/A"
+    #     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    #         if size_in_bytes < 1024.0:
+    #             return f"{size_in_bytes:.1f} {unit}"
+    #         size_in_bytes /= 1024.0
+    #     return f"{size_in_bytes:.1f} PB"
+    
 
+
+    
     def _print_ls_output(self, contents, flags):
         """Print the output of the ls command, taking into account flags.
                 
@@ -336,8 +354,13 @@ class DbApi:
             or available locally via: info '(coreutils) ls invocation'
 
         GNU coreutils 8.32                                         February 2024                                                      LS(1)"""
-        # Check if long format '-l' is passed
+        # ANSI color codes for blue directories
+        BLUE = '\033[94m'  # Blue color for directories
+        RESET = '\033[0m'  # Reset to default color
+        
+        # Check if long format '-l' and '-h' is passed
         long_format = '-l' in flags
+        human_readable = '-h' in flags  # Check if human-readable format is needed
 
         for item in contents:
             if isinstance(item, dict):
@@ -346,14 +369,21 @@ class DbApi:
                     permissions = item['permissions']  # Already formatted as 'r-x' etc.
                     owner = item['owner']
                     modified_time = item.get('modified_at', item.get('modified_date', "N/A"))
-                    size = item['size']
+                    
+                    # Apply human-readable formatting if '-h' is set
+                    size = human_readable_size(item['size']) if human_readable else item['size']
                     name = item['name']
+
+                    # Apply blue color to directory names
+                    name = f"{BLUE}{item['name']}{RESET}" if item['type'] == 'dir' else item['name']
 
                     # Format and print the output in long format
                     print(f"{file_type}{permissions} {owner} {size} {modified_time} {name}")
                 else:
                     # Short format: just print the names
-                    print(item['name'])
+                    name = f"{BLUE}{item['name']}{RESET}" if item['type'] == 'dir' else item['name']
+                    # print(item['name'])
+                    print(name)
             else:
                 # Handle the case where the item is a string or other type (for example, from piped input)
                 print(item)
@@ -371,6 +401,21 @@ class DbApi:
         """Return the parent directory based on the current pid."""
         return ".."
     
+    def get_current_path(self):
+        """Reconstruct the current directory path based on current_pid."""
+        path_parts = []
+        pid = self.current_pid
+
+        while pid != 1:  # Continue until we reach the root directory
+            directory_info = self.conn.get_directory_info(pid)  # This should return the name and parent ID
+            if directory_info is None:
+                break  # Handle case where directory isn't found (e.g., deleted or invalid pid)
+            
+            path_parts.insert(0, directory_info['name'])  # Add directory name to the path
+            pid = directory_info['pid']  # Move up to the parent directory
+
+        # Join all parts to form the full path
+        return "/" + "/".join(path_parts) if path_parts else "/"
 
     def run_cd(self, cmd):
         """Execute the cd command with support for ~, .., and directory names.
@@ -412,33 +457,51 @@ IMPLEMENTATION
     GNU bash, version 5.0.17(1)-release (x86_64-redhat-linux-gnu)
     Copyright (C) 2019 Free Software Foundation, Inc.
     License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>"""
+        # params = cmd["params"]
+
+        # if not params or params[0] == "~":
+        #     # Change to home directory, reset current_pid to 1 (home's id)
+        #     target_dir = "home"  # Always use 'home' for ~
+        #     print(f"Changing to home directory: {target_dir}")  # Debugging
+        #     self.current_pid = 1  # Reset current_pid to home directory's id (id = 1)
+        # elif params[0] == "..":
+        #     # Change to parent directory
+        #     target_dir = self.get_parent_directory()
+        #     print(f"Changing to parent directory: {target_dir}")  # Debugging
+        # else:
+        #     # Change to the specified directory
+        #     target_dir = params[0]
+        #     print(f"Changing to specified directory: {target_dir}")  # Debugging
+        
+        # # Send the request to the API to change the directory
+        # response = requests.get(f"{self.url}/cd/?dir={target_dir}&current_pid={self.current_pid}")
+        # print(f"API Request sent to: /cd/?dir={target_dir}&current_pid={self.current_pid}")  # Debugging
+        # print(f"API Response Status Code: {response.status_code}, Response: {response.json()}")  # Debugging
+        
+        # if response.status_code == 200:
+        #     new_pid = response.json().get("new_pid")
+        #     self.current_pid = new_pid  # Update the shell's current directory (IMPORTANT)
+        #     print(f"Changed directory to: {target_dir}, New PID: {self.current_pid}")
+        # else:
+        #     print(f"Error: {response.json().get('detail', 'Unknown error')}")
+        
         params = cmd["params"]
 
         if not params or params[0] == "~":
-            # Change to home directory, reset current_pid to 1 (home's id)
-            target_dir = "home"  # Always use 'home' for ~
-            print(f"Changing to home directory: {target_dir}")  # Debugging
-            self.current_pid = 1  # Reset current_pid to home directory's id (id = 1)
+            self.current_pid = 1  # Home directory
         elif params[0] == "..":
-            # Change to parent directory
-            target_dir = self.get_parent_directory()
-            print(f"Changing to parent directory: {target_dir}")  # Debugging
+            # Set to parent if not at root
+            parent_directory = self.conn.get_parent_directory(self.current_pid)
+            self.current_pid = parent_directory['pid'] if parent_directory else self.current_pid
         else:
-            # Change to the specified directory
+            # Change to specified directory
             target_dir = params[0]
-            print(f"Changing to specified directory: {target_dir}")  # Debugging
-        
-        # Send the request to the API to change the directory
-        response = requests.get(f"{self.url}/cd/?dir={target_dir}&current_pid={self.current_pid}")
-        print(f"API Request sent to: /cd/?dir={target_dir}&current_pid={self.current_pid}")  # Debugging
-        print(f"API Response Status Code: {response.status_code}, Response: {response.json()}")  # Debugging
-        
-        if response.status_code == 200:
-            new_pid = response.json().get("new_pid")
-            self.current_pid = new_pid  # Update the shell's current directory (IMPORTANT)
-            print(f"Changed directory to: {target_dir}, New PID: {self.current_pid}")
-        else:
-            print(f"Error: {response.json().get('detail', 'Unknown error')}")
+            response = requests.get(f"{self.url}/cd/?dir={target_dir}&current_pid={self.current_pid}")
+            if response.status_code == 200:
+                self.current_pid = response.json().get("new_pid")
+
+        # Update the prompt with the new path
+        update_prompt(self.get_current_path())
     
     # cat command (meow) #
 
@@ -728,6 +791,81 @@ GNU coreutils 8.32                                         February 2024        
 
             print(f"Word count from file: {word_count}")
             return [str(word_count)]
+
+
+    #### wc
+
+    # def run_wc(self, cmd, previous_output=None):
+    #     if previous_output:
+    #         # Process piped input
+    #         line_count = len(previous_output)
+    #         word_count = sum(len(line.split()) for line in previous_output)
+    #         char_count = sum(len(line) for line in previous_output)
+            
+    #         print(f"Line count: {line_count}, Word count: {word_count}, Character count: {char_count}")
+    #         return [str(line_count), str(word_count), str(char_count)]  # Return as a list for further piping
+    #     else:
+    #         # Handle the case when there's no previous output (file input)
+    #         params = cmd["params"]
+    #         if len(params) < 1:
+    #             print("Error: wc requires a file or input")
+    #             return []
+            
+    #         file_name = params[0]
+    #         try:
+    #             with open(file_name, 'r') as f:
+    #                 content = f.readlines()
+    #                 line_count = len(content)
+    #                 word_count = sum(len(line.split()) for line in content)
+    #                 char_count = sum(len(line) for line in content)
+    #         except IOError as e:
+    #             print(f"Error reading file {file_name}: {e}")
+    #             return []
+
+    #         print(f"Line count: {line_count}, Word count: {word_count}, Character count: {char_count}")
+    #         return [str(line_count), str(word_count), str(char_count)]
+
+
+    def run_wc(self, cmd, previous_output=None, redirect=None, append=False):
+        # Perform word, line, and character count
+        if previous_output:
+            # Process piped input
+            line_count = len(previous_output)
+            word_count = sum(len(line.split()) for line in previous_output)
+            char_count = sum(len(line) for line in previous_output)
+        else:
+            # Handle file input
+            params = cmd["params"]
+            if len(params) < 1:
+                print("Error: wc requires a file or input")
+                return []
+            
+            file_name = params[0]
+            try:
+                with open(file_name, 'r') as f:
+                    content = f.readlines()
+                    line_count = len(content)
+                    word_count = sum(len(line.split()) for line in content)
+                    char_count = sum(len(line) for line in content)
+            except IOError as e:
+                print(f"Error reading file {file_name}: {e}")
+                return []
+
+        # Prepare output as a single string
+        output = f"Line count: {line_count}, Word count: {word_count}, Character count: {char_count}\n"
+
+        # Handle redirection if specified
+        if redirect:
+            mode = 'a' if append else 'w'
+            with open(redirect, mode) as f:
+                f.write(output)
+            return []  # Return an empty list since output was redirected
+        else:
+            # No redirection, so print to terminal and return for piping
+            print(output.strip())
+            return [output.strip()]
+
+
 
     # grep command #    
     
@@ -2154,8 +2292,17 @@ getch = Getch()  # create instance of our getch class
 
 # DbApi = DbApi()
 
-prompt = "$"  # set default prompt
+# ANSI color codes for blue path
+BLUE = '\033[94m'
+RESET = '\033[0m'
 
+# prompt = "$"  # set default prompt
+prompt = f"{BLUE}~{RESET}$ "
+
+def update_prompt(path):
+    """Update the global prompt with the current path in blue."""
+    global prompt
+    prompt = f"{BLUE}{path}{RESET}$ "
 
 def get_flags(cmd):
     flags = []
@@ -2292,7 +2439,8 @@ if __name__ == "__main__":
                         previous_output = db_api.run_wc_w(sub_cmd, previous_output)
                     elif sub_cmd["cmd"] == "wc":
                         print("Running wc command")
-                        previous_output = db_api.run_wc(sub_cmd)
+                        # previous_output = db_api.run_wc(sub_cmd)
+                        previous_output = db_api.run_wc(sub_cmd, previous_output, redirect=parsed_cmd["redirect"], append=parsed_cmd["append"])
                     elif sub_cmd["cmd"] == "grep":
                         # Pass the previous output if there's piping
                         previous_output = db_api.run_grep(sub_cmd, previous_output)
@@ -2336,4 +2484,5 @@ if __name__ == "__main__":
             print_cmd(cmd, cursor_pos)  # now print empty cmd prompt
         else:
             cmd += char  # add typed character to our "cmd"
+            cursor_pos += 1  # move cursor position forward
             print_cmd(cmd, cursor_pos)  # print the cmd out

@@ -1,4 +1,11 @@
-# # sqliteCRUD.py
+# sqliteCRUD.py
+
+"""
+This file provides the core functionality for creating, reading, updating, and
+deleting entries in the SQLite database, managing file and directory metadata, 
+permissions, and user information. It acts as the database interface, enabling 
+the API to execute the necessary queries and operations based on the shell's requests.
+"""
 
 import sqlite3
 
@@ -114,6 +121,20 @@ class SqliteCRUD:
         result = cursor.fetchone()
         conn.close()
         return result[0] if result else None
+    
+    def get_directory_info(self, pid):
+        """Retrieve directory name and parent ID based on the pid."""
+        conn = self._connect()
+        cursor = conn.cursor()  # Get a cursor from the connection
+
+        query = "SELECT name, pid FROM directories WHERE id = ?"
+        cursor.execute(query, (pid,))
+        result = cursor.fetchone()
+        conn.close()  # Ensure the connection is closed after use
+
+        if result:
+            return {'name': result[0], 'pid': result[1]}  # name and parent id
+        return None  # Return None if directory not found
 
     ### cat, sort
     def read_file(self, file_name: str, pid: int):
@@ -159,6 +180,34 @@ class SqliteCRUD:
 
         finally:
             conn.close()
+            
+    def count_lines_words_chars(self, file_name, pid):
+        """Count lines, words, and characters in the specified file."""
+        conn = self._connect()
+        cursor = conn.cursor()
+
+        try:
+            # Fetch the file contents
+            cursor.execute("SELECT contents FROM files WHERE name = ? AND pid = ?", (file_name, pid))
+            result = cursor.fetchone()
+
+            if result:
+                file_contents = result[0].decode('utf-8')  # Decode the BLOB contents
+                lines = file_contents.splitlines()
+                line_count = len(lines)
+                word_count = sum(len(line.split()) for line in lines)
+                char_count = len(file_contents)
+                return line_count, word_count, char_count
+            else:
+                return None, None, None  # File not found
+
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None, None, None
+
+        finally:
+            conn.close()
+
 
 
     def create_file(self, name, contents, pid, oid, size=0):
