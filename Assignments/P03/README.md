@@ -1,4 +1,4 @@
-CPU Scheduler
+## CPU Scheduler Simulation
 Algorithms implemented:
 - First Come First Serve
 - Shortest Job First
