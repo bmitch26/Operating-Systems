@@ -1,11 +1,3 @@
-### 11/26/2024 Update
-### Need to:
-## - pass in number of priority queues as a karg
-## - pass in time quantums for priority queues as a karg
-## - aging as a karg
-##- when remaining burst time is 0, process is finished. Not at -1.
-
-
 ### Contains the MLFQ algorithm logic
 
 from collections import deque
@@ -22,7 +14,6 @@ from getch import getch
 
 console = Console()
 
-aging_threshold=20
 
 def render_clock(clock):
     """Renders the clock dynamically using the rich live display."""
@@ -30,6 +21,12 @@ def render_clock(clock):
     return text
 
 def run_mlfq_simulation(config, client_id, num_cores):    
+    # Use the aging threshold and number of priority queues from the configuration
+    aging_threshold = config.get("aging", 10)
+    num_priority_queues = config["priority_levels"][0]
+    time_quantums = config["time_quantums"]
+    priority_queues = [deque() for _ in range(num_priority_queues)]
+    
     # Initialize the simulation
     response = init(config)
     if response is None:
@@ -39,7 +36,7 @@ def run_mlfq_simulation(config, client_id, num_cores):
         console.print("[red]Invalid response from init. Missing 'session_id' or 'start_clock'. Exiting simulation.[/red]")
         return
 
-    time_quantums = [5, 10, 15]  # Example time quantum for each priority level
+    # time_quantums = [5, 10, 15]  # Example time quantum for each priority level
     job_execution_time = {}  # Track execution time for jobs
     session_id = response['session_id']
     start_clock = response['start_clock']
