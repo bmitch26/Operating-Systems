@@ -4,6 +4,7 @@ import sys
 from fcfs import run_fcfs_simulation
 from cpu_jobs import getConfig
 import os
+from mlfq import run_mlfq_simulation
 
 def MyKwargs(argv):
     """
@@ -25,9 +26,21 @@ if __name__ == "__main__":
     args, kargs = MyKwargs(sys.argv)
 
     # Validate mandatory arguments
-    if "sched" not in kargs or kargs["sched"] != "FCFS":
-        print("Error: --sched must be specified and set to FCFS.")
+    if "sched" not in kargs:
+        print("Error: --sched must be specified.")
         sys.exit()
+    
+    if "aging" in kargs:
+        try:
+            kargs["aging"] = int(kargs["aging"])
+            if kargs["aging"] <= 0:
+                raise ValueError
+        except ValueError:
+            print("Error: --aging must be a positive integer.")
+            sys.exit()
+    else:
+        kargs["aging"] = 10  # Default value for aging threshold
+
 
     # Validate and convert CPUs and IO devices
     try:
@@ -57,8 +70,47 @@ if __name__ == "__main__":
     config = getConfig(client_id)
     config["cpus"] = kargs["cpus"]  # Add the number of CPUs to the configuration
     config["ios"] = kargs["ios"]  # Add the number of IO devices to the configuration
+    config["aging"] = kargs["aging"] # Add aging threshold to the configuration
+    config["queues"] = kargs["queues"] # Add number of priority queues to the configuration
+    
+    
+    # Check if the user has provided the --queues argument
+    if "queues" in kargs:
+        try:
+            kargs["queues"] = int(kargs["queues"])
+            if not (1 <= kargs["queues"] <= 5):
+                raise ValueError
+            # Override the priority levels in the configuration
+            config["priority_levels"] = [kargs["queues"]]
+        except ValueError:
+            print("Error: --queues must be an integer between 1 and 5.")
+            sys.exit()
+        else:
+            print(f"Using default priority levels from API: {config['priority_levels']}")
+            
+    
+    # Check if the user has provided the --quantums argument
+    if "quantums" in kargs:
+        try:
+            # Split the quantums by commas and convert to integers
+            kargs["quantums"] = list(map(int, kargs["quantums"].split(",")))
+            if len(kargs["quantums"]) != config["priority_levels"][0]:
+                raise ValueError(f"--quantums must have exactly {config['priority_levels'][0]} values to match the number of priority queues.")
+            if any(q <= 0 for q in kargs["quantums"]):
+                raise ValueError("All values in --quantums must be positive integers.")
+        except ValueError as e:
+            print(f"Error: {e}")
+            sys.exit()
+        # Override the time quantums in the configuration
+        config["time_quantums"] = kargs["quantums"]
+    else:
+        # Default time quantums: 5 ticks per queue
+        config["time_quantums"] = [5] * config["priority_levels"][0]
 
     # Run selected scheduling algorithm
     if kargs["sched"] == "FCFS":
         print(f"Running FCFS with {kargs['cpus']} CPUs and {kargs['ios']} IO devices...")
         run_fcfs_simulation(config, client_id, num_cores=config["cpus"])
+    if kargs["sched"] == "MLFQ":
+        print(f"Running MLFQ with {kargs['cpus']} CPUs, {kargs['ios']} IO devices, {config['priority_levels'][0]} priority queues, aging threshold {kargs['aging']}, and time quantums {config['time_quantums']}...")
+        run_mlfq_simulation(config, client_id, num_cores=config["cpus"])
