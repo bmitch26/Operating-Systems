@@ -1,6 +1,6 @@
 ## CPU Scheduler Simulation
 Algorithms implemented:
-- First Come First Serve (FCFS)
-- Shortest Job First
-- Round Robin
-- Multi-Level Feedback Queue
+- First Come First Serve (fcfs.py)
+- Shortest Job First (sjb.py)
+- Round Robin (rr.py)
+- Multi-Level Feedback Queue (mlfq.py)
