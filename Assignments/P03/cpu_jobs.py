@@ -8,20 +8,20 @@ from rich import print
 def getConfig(client_id):
     return {
         "client_id": "brett",
-        "min_jobs": 3,
-        "max_jobs": 3,
-        "min_bursts": 3,
-        "max_bursts": 5,
-        "min_job_interval": 1,
-        "max_job_interval": 5,
-        "burst_type_ratio": 0.5,
-        "min_cpu_burst_interval": 1,
-        "max_cpu_burst_interval": 5,
-        "min_io_burst_interval": 5,
-        "max_io_burst_interval": 8,
-        "min_ts_interval": 10,
-        "max_ts_interval": 20,
-        "priority_levels": [1,2,3,4,5]
+        "min_jobs": 10, # Generate minimum 10 jobs
+        "max_jobs":10,  # Generate maximum 10 jobs
+        "min_bursts": 5,  # Each job has at least 5 bursts
+        "max_bursts": 5,  # At most 5 bursts per job
+        "min_job_interval": 10,  # New jobs arrive at minimum after 10 clock ticks
+        "max_job_interval": 12,  # Max interval between job arrivals
+        "burst_type_ratio": 0.8,  # Higher chance of CPU bursts (80%)
+        "min_cpu_burst_interval": 3,  # Short CPU bursts (3 ticks)
+        "max_cpu_burst_interval": 5,  # Max CPU burst duration (5 ticks)
+        "min_io_burst_interval": 2,  # Short IO bursts (2 ticks)
+        "max_io_burst_interval": 4,  # Max IO burst duration (4 ticks)
+        "min_ts_interval": 5,  # Short timeslice intervals for preemption testing
+        "max_ts_interval": 10,  # Upper bound for timeslice intervals
+        "priority_levels": [3],  # 3 priority levels -> this value is overwritten by terminal argument; if none passed, default is 3 priority queues
     }
 
 def init(config):
