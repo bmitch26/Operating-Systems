@@ -9,7 +9,7 @@ Group Members:
 The goal of the project is to create a custom shell that interacts with a simulated filesystem managed through an SQLite database, allowing users to execute typical shell commands like ls, cp, mv, and grep. The shell leverages a FastAPI-based API to process user inputs, perform database operations, and handle file management tasks in a Linux-like environment.
 
 ## Instructions:
-Run the `shell.py` file and use the following commands...
+Run the `shell.py` file and use the following commands.
 
 ## Commands:
 | Command  | Description                  | Author   |
