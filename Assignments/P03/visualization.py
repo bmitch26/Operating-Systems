@@ -6,11 +6,11 @@ from rich.layout import Layout
 
 def render_metrics(clock, start_clock, throughput, avg_wait_time, avg_turnaround_time, cpu_utilization, fairness):
     """Renders the key metrics dynamically as a rich table."""
-    table = Table(title="Simulation Metrics", expand=True)
+    table = Table(expand=True)
 
     # Add columns for metric names and their current values
-    table.add_column("Metric", justify="left")
-    table.add_column("Value", justify="center")
+    table.add_column("[orange1]Metric[/orange1]", justify="left")
+    table.add_column("[thistle3]Value[/thistle3]", justify="center")
 
     # Add rows for each metric
     table.add_row("Start Clock", f"{start_clock} ticks")  # Display Start Clock first
@@ -27,22 +27,25 @@ def render_metrics(clock, start_clock, throughput, avg_wait_time, avg_turnaround
 
 def render_queues(new_queue, ready_queue, running_queue, waiting_queue, io_queue, exit_queue):
     """Renders the job queues dynamically as a rich table."""
-    table = Table(title="Job Queues", expand=True)
+    table = Table(expand=True)
 
     # Add columns for queues
-    table.add_column("New Queue", justify="center")
-    table.add_column("Ready Queue", justify="center")
-    table.add_column("Running Queue", justify="center")
-    table.add_column("Waiting Queue", justify="center")
-    table.add_column("IO Queue", justify="center")
-    table.add_column("Exit Queue", justify="center")
+    table.add_column("[cyan]New Queue[/cyan]", justify="center")
+    table.add_column("[green]Ready Queue[/green]", justify="center")
+    table.add_column("[yellow]Running Queue[/yellow]", justify="center")
+    table.add_column("[magenta]Waiting Queue[/magenta]", justify="center")
+    table.add_column("[blue]IO Queue[/blue]", justify="center")
+    table.add_column("[red]Exit Queue[/red]", justify="center")
 
     def format_job_display(job):
         """Formats the display of a job with its ID and remaining burst time."""
         job_id = job.get("job_id", "?")
         bursts = job.get("data", {}).get("bursts", [])
         remaining_burst = bursts[0]["duration"] if bursts else "-"
-        return f"{job_id} - {remaining_burst}"
+        # return f"{job_id} - {remaining_burst}"
+        wait_time = job.get("wait_time", 0)  # Safely retrieve 'wait_time' from the job dictionary
+        
+        return f"[red]J:{job_id}[/red] [green]B:{remaining_burst}[/green] [yellow]W:{wait_time}[/yellow]"
 
     # Calculate the maximum number of rows needed
     max_rows = max(
@@ -67,5 +70,5 @@ def render_queues(new_queue, ready_queue, running_queue, waiting_queue, io_queue
         table.add_row(*row)
 
     # Wrap the table in a panel for better visualization
-    panel = Panel(table, title="Queue Visualization", expand=True)
+    panel = Panel(table, title="Job Queue Visualization", expand=True)
     return panel
