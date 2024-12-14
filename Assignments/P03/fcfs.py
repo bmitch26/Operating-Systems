@@ -8,6 +8,7 @@ from rich.live import Live
 from rich.text import Text
 from rich.layout import Layout
 from visualization_fcfs import render_queues, render_metrics
+from getch import getch
 
 console = Console()
 
@@ -306,6 +307,10 @@ def run_fcfs_simulation(config, client_id, num_cores):
                     console.print(f"[red]Error: Job {job['job_id']} has no bursts to process in IO queue. Moving to exit queue.[/red]")
                     io_queue.remove(job)
                     exit_queue.append(job)
+
+            # Wait for a keypress to continue
+            print("Press any key to continue...")
+            getch()
 
             # Increment clock
             clock += 1
