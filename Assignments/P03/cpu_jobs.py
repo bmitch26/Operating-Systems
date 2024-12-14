@@ -1,8 +1,12 @@
 ### Handles API Interactions
+# put in running jobs and finished jobs in right panel
+# have output stream in lower panel
+# add color
 
 import requests
 import json 
 import os
+import random
 from rich import print
 
 def getConfig(client_id):
@@ -24,11 +28,13 @@ def getConfig(client_id):
         "priority_levels": [3],  # 3 priority levels -> this value is overwritten by terminal argument; if none passed, default is 3 priority queues
     }
 
-def init(config):
+def init(config, seed=None):
     """
     This function will initialize the client and return the `client_id` and `session_id`
     """
-    route = f"http://profgriffin.com:8000/init"
+    if not seed:
+        seed = random.randint(0, 10000000)
+    route = f"http://profgriffin.com:8000/init?seed={seed}"
     r = requests.post(route,json=config)
     if r.status_code == 200:
         response = r.json()
@@ -93,6 +99,7 @@ if __name__ == '__main__':
 
     start_clock = response['start_clock']
     session_id = response['session_id']
+    # time_quantum = response['time_slice']
 
     clock = start_clock
 
