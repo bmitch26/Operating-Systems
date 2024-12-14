@@ -2,7 +2,9 @@
 
 import sys
 from fcfs import run_fcfs_simulation
-from cpu_jobs import getConfig
+from pb import run_pb_simulation
+from rr import run_rr_simulation
+from cpu_jobs import getConfig, init
 import os
 from mlfq import run_mlfq_simulation
 
@@ -46,9 +48,11 @@ if __name__ == "__main__":
     try:
         kargs["cpus"] = int(kargs.get("cpus", 2))  # Default to 2 CPUs
         kargs["ios"] = int(kargs.get("ios", 2))  # Default to 2 IO devices
+        kargs["seed"] = kargs.get("seed", None)
     except ValueError:
         print("Error: --cpus and --ios must be integers.")
         sys.exit()
+
 
     if not (1 <= kargs["cpus"] <= 4):
         print("Error: --cpus must be between 1 and 4.")
@@ -73,6 +77,10 @@ if __name__ == "__main__":
     config["aging"] = kargs["aging"] # Add aging threshold to the configuration
     config["queues"] = kargs["queues"] # Add number of priority queues to the configuration
     
+    # Check if there is a response provided for time quantum
+    response = init(config, kargs["seed"])
+    if response:
+        time_quantum = response['time_slice']
     
     # Check if the user has provided the --queues argument
     if "queues" in kargs:
@@ -114,3 +122,9 @@ if __name__ == "__main__":
     if kargs["sched"] == "MLFQ":
         print(f"Running MLFQ with {kargs['cpus']} CPUs, {kargs['ios']} IO devices, {config['priority_levels'][0]} priority queues, aging threshold {kargs['aging']}, and time quantums {config['time_quantums']}...")
         run_mlfq_simulation(config, client_id, num_cores=config["cpus"])
+    elif kargs["sched"] == "PB":
+        print(f"Running PB with {kargs['cpus']} CPUs and {kargs['ios']} IO devices...")
+        run_pb_simulation(config, client_id, num_cores=config["cpus"])
+    elif kargs["sched"] == "RR":
+        print(f"Running RR with {kargs['cpus']} CPUs and {kargs['ios']} IO devices...")
+        run_rr_simulation(config, client_id, num_cores=config["cpus"], time_quantum=time_quantum)
