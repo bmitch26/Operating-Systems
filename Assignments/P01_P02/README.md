@@ -17,7 +17,7 @@ Group Members:
 | api.py | Receives requests from 'shell.py', handling a variety of Linux commands. After receiving a request, it interacts with 'sqliteCRUD.py' to continue carrying out execution of the command. |
 
 ## Instructions:
-Download all of the files in P01 and P02 and run any of the following commands after populating the database with 'create_and_load_db.py':
+Download all of the files in P01 and run any of the following commands after populating the database with 'create_and_load_db.py':
 
 ## Commands:
 | Command  | Description                  | Author   |
@@ -42,7 +42,3 @@ Download all of the files in P01 and P02 and run any of the following commands a
 | `fortune` | Receive a fortune               | Sly |
 | `cowspeak` | Display depiction of a coo    | Sly |
 | `man` | Display additional command information | Sly |
-
-## Non-Working Components
-- 'pwd' is partially functional, returning the parent ID, but does not provide the name of the parent ID.
-- 'mv' worked in all iterations of testing, but gave issues in the live demo/presentation.
