@@ -2,7 +2,7 @@
 https://www.youtube.com/watch?v=mKiKkYp8C88
 
 22 Oct 2024
-5143 Shell Project
+- 5143 Shell Project
 Group Members:
 - Brett Mitchell, Sly Rahimi
 - Note: P01 and P02 work together (shell interacts with the file system).
