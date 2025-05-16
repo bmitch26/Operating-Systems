@@ -10,6 +10,7 @@ The purpose of this project is to simulate the way a CPU processes jobs under a 
 - Priority Based (pb.py)
 - Round Robin (rr.py)
 - Multi-Level Feedback Queue (mlfq.py)
+- Rate Monotonic Scheduler (rms.py)
 
 ## Files
 |   #   | File            | Description                                        |
@@ -23,6 +24,8 @@ The purpose of this project is to simulate the way a CPU processes jobs under a 
 |   7   | visualization.py | Contains visualization for RR and PB. |
 |   8   | visualization_fcfs.py | Contains visualization for FCFS. |
 |   9   | visualization_mlfq.py | Contains visualization for MLFQ. |
+|   10  | rms.py                | Contains RMS simulation logic.   |
+|   11  | visualization_rms.py  | Contains visualization for RMS.  |
 
 ## Instructions:
 - Receive jobs, burst types, and burst durations from 'cpu_jobs.py'.
